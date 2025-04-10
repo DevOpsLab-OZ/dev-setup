@@ -21,7 +21,7 @@
 2. 개발 환경 자동화 스크립트 실행
    ```bash
    # 저장소 클론
-   git clone https://github.com/사용자이름/dev-setup.git
+   git clone https://github.com/DevOpsLab-OZ/dev-setup.git
    cd dev-setup
    
    # 스크립트 실행 권한 부여
