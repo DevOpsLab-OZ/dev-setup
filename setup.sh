@@ -51,6 +51,9 @@ load_config() {
     INSTALL_DOCKER=true
     INSTALL_NODEJS=true
     INSTALL_PYTHON=true
+    INSTALL_DOTFILES=true
+    DOTFILES_REPO="https://github.com/DevOpsLab-OZ/dotfiles.git"
+    DOTFILES_PATH="$HOME/dotfiles"
     
     # 설정 파일이 없는 경우 생성
     if [ ! -f "$CONFIG_FILE" ]; then
@@ -73,6 +76,12 @@ install:
   docker: true   # Docker 설치 여부
   nodejs: true   # Node.js와 NVM 설치 여부
   python: true   # Python 개발 도구 설치 여부
+
+# dotfiles 설정
+dotfiles:
+  install: true     # dotfiles 저장소 설치 여부
+  repository: "https://github.com/DevOpsLab-OZ/dotfiles.git"  # dotfiles 저장소 URL
+  path: "\$HOME/dotfiles"  # 설치 경로
 EOF
         log_info "기본 설정 파일이 생성되었습니다. 필요에 따라 수정 후 스크립트를 다시 실행하세요."
         if [ -n "$EDITOR" ]; then
@@ -115,6 +124,25 @@ EOF
         if grep -q "python:[[:space:]]*false" "$CONFIG_FILE"; then
             INSTALL_PYTHON=false
         fi
+        
+        # dotfiles 설정
+        if grep -q "dotfiles:" "$CONFIG_FILE"; then
+            if grep -q "install:[[:space:]]*false" "$CONFIG_FILE"; then
+                INSTALL_DOTFILES=false
+            fi
+            
+            repo_line=$(grep -A2 "dotfiles:" "$CONFIG_FILE" | grep "repository:" | cut -d: -f2-)
+            if [ -n "$repo_line" ]; then
+                DOTFILES_REPO=$(echo $repo_line | sed 's/^[[:space:]]*//;s/"//g')
+            fi
+            
+            path_line=$(grep -A3 "dotfiles:" "$CONFIG_FILE" | grep "path:" | cut -d: -f2-)
+            if [ -n "$path_line" ]; then
+                DOTFILES_PATH=$(echo $path_line | sed 's/^[[:space:]]*//;s/"//g')
+                # 환경 변수 확장 (예: $HOME을 실제 홈 디렉토리로)
+                DOTFILES_PATH=$(eval echo "$DOTFILES_PATH")
+            fi
+        fi
     fi
     
     log_info "설정 로드 완료"
@@ -123,6 +151,11 @@ EOF
     log_info "Docker 설치: $([ $INSTALL_DOCKER == true ] && echo '예' || echo '아니오')"
     log_info "Node.js 설치: $([ $INSTALL_NODEJS == true ] && echo '예' || echo '아니오')"
     log_info "Python 설치: $([ $INSTALL_PYTHON == true ] && echo '예' || echo '아니오')"
+    log_info "dotfiles 설치: $([ $INSTALL_DOTFILES == true ] && echo '예' || echo '아니오')"
+    if [ "$INSTALL_DOTFILES" = true ]; then
+        log_info "dotfiles 저장소: $DOTFILES_REPO"
+        log_info "dotfiles 경로: $DOTFILES_PATH"
+    fi
 }
 
 # 백업 생성 함수
@@ -170,16 +203,62 @@ show_progress() {
     printf "${NC}] %3d%% (%d/%d)" $percent $step $total
 }
 
+# 명령행 인자 처리
+parse_args() {
+    MINIMAL_INSTALL=false
+    NO_DOTFILES=false
+
+    for arg in "$@"; do
+        case $arg in
+            --minimal)
+                MINIMAL_INSTALL=true
+                log_info "최소 설치 모드가 활성화되었습니다."
+                ;;
+            --no-dotfiles)
+                NO_DOTFILES=true
+                INSTALL_DOTFILES=false
+                log_info "dotfiles 설치를 건너뜁니다."
+                ;;
+            --help|-h)
+                echo "사용법: $(basename "$0") [옵션]"
+                echo ""
+                echo "옵션:"
+                echo "  --minimal       최소 설치 모드 (기본 도구만 설치)"
+                echo "  --no-dotfiles   dotfiles 설치 건너뛰기"
+                echo "  --help, -h      도움말 표시"
+                exit 0
+                ;;
+            *)
+                # 알 수 없는 옵션
+                ;;
+        esac
+    done
+
+    # 최소 설치 모드일 경우 필수 도구만 설치
+    if [ "$MINIMAL_INSTALL" = true ]; then
+        INSTALL_DOCKER=false
+        INSTALL_NODEJS=false
+        INSTALL_PYTHON=false
+        # 명시적으로 --no-dotfiles가 지정되지 않았다면 dotfiles는 설치
+        if [ "$NO_DOTFILES" = false ]; then
+            INSTALL_DOTFILES=true
+        fi
+    fi
+}
+
 # 메인 함수 정의
 main() {
     echo -e "${BLUE}===== 개발 환경 자동화 스크립트 시작 =====${NC}"
+    
+    # 명령행 인자 처리
+    parse_args "$@"
     
     # 백업 생성 및 설정 로드
     load_config
     create_backup
     
     # 총 단계 수 및 현재 단계 초기화
-    total_steps=8  # 주요 단계 수
+    total_steps=9  # 주요 단계 수 (dotfiles 포함)
     current_step=0
     
     # 스크립트 시작
@@ -278,6 +357,43 @@ main() {
     sudo mv code /usr/local/bin/
     rm vscode_cli.tar.gz
     check_status "VS Code 서버 설치"
+    
+    # dotfiles 설치 및 설정
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    log_info "dotfiles 설치 및 설정 중..."
+    
+    if [ "$INSTALL_DOTFILES" = true ]; then
+        # dotfiles 저장소 클론 또는 업데이트
+        if [ -d "$DOTFILES_PATH" ]; then
+            log_info "기존 dotfiles 저장소 업데이트 중..."
+            cd "$DOTFILES_PATH"
+            git pull origin main
+            cd - > /dev/null
+        else
+            log_info "dotfiles 저장소 클론 중..."
+            git clone "$DOTFILES_REPO" "$DOTFILES_PATH"
+        fi
+        
+        # dotfiles 설치 스크립트 실행
+        if [ -f "$DOTFILES_PATH/install.sh" ]; then
+            log_info "dotfiles 설치 스크립트 실행 중..."
+            cd "$DOTFILES_PATH"
+            chmod +x install.sh
+            
+            # Git 및 Zsh 설정 전달
+            export SETUP_GIT_NAME="$GIT_NAME"
+            export SETUP_GIT_EMAIL="$GIT_EMAIL"
+            export SETUP_ZSH_THEME="$ZSH_THEME"
+            
+            ./install.sh --from-setup
+            cd - > /dev/null
+        fi
+        
+        check_status "dotfiles 설치 및 설정"
+    else
+        log_info "dotfiles 설치를 건너뜁니다."
+    fi
     
     # 줄바꿈 (진행 표시줄 다음에 출력하기 위함)
     echo

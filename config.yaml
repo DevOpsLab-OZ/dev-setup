@@ -14,3 +14,9 @@ install:
   docker: true   # Docker 설치 여부
   nodejs: true   # Node.js와 NVM 설치 여부
   python: true   # Python 개발 도구 설치 여부
+
+# dotfiles 설정
+  dotfiles:
+    install: true    # dotfiles 저장소 설치 여부
+    repository: "https://github.com/DevOpsLab-OZ/dotfiles.git" # dotfiles 저장소 URL
+    path: "$HOME/dotfiles"    # 설치 경로
