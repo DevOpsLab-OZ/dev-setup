@@ -1,0 +1,16 @@
+# 개발 환경 설정 파일
+
+# Git 설정
+git:
+  name: "당신의 이름"  # Git 사용자 이름
+  email: "당신의이메일@example.com"  # Git 이메일 주소
+
+# Zsh 설정
+zsh:
+  theme: "robbyrussell"  # Oh-My-Zsh 테마 (https://github.com/ohmyzsh/ohmyzsh/wiki/Themes)
+
+# 설치 옵션
+install:
+  docker: true   # Docker 설치 여부
+  nodejs: true   # Node.js와 NVM 설치 여부
+  python: true   # Python 개발 도구 설치 여부
