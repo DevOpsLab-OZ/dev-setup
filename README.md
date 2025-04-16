@@ -72,6 +72,16 @@ chmod +x vscode-extensions.sh
 - **config.yaml**: 환경 설정 값 (Git 사용자 정보, 설치 옵션 등)
 - **vscode/vscode-extensions.sh**: VS Code 확장 프로그램 설치 스크립트
 
+## 통합 기능
+
+이 프로젝트는 [dotfiles](https://github.com/DevOpsLab-OZ/dotfiles) 저장소를 자동으로 설치하고 구성합니다:
+
+- Git 설정 (.gitconfig)
+- Zsh 및 Oh-My-Zsh 설정 (.zshrc)
+- 기타 개인 설정 파일
+
+dotfiles 설치를 비활성화하려면 `config.yaml` 파일의 `dotfiles.install` 값을 `false`로 설정하거나 명령행에서 `--no-dotfiles` 옵션을 사용하세요.
+
 ## 개발 워크플로우
 
 1. 새 프로젝트 시작:
@@ -98,6 +108,20 @@ chmod +x vscode-extensions.sh
    python3 -m venv venv
    source venv/bin/activate
    ```
+
+## 명령행 옵션
+
+스크립트는 다음 옵션을 지원합니다:
+
+- `--minimal`: 최소 설치 모드 (기본 도구만 설치)
+- `--no-dotfiles`: dotfiles 설치 건너뛰기
+- `--help`, `-h`: 도움말 표시
+
+예시:
+```bash
+./setup.sh --minimal  # 최소한의 도구만 설치
+./setup.sh --no-dotfiles  # dotfiles 설치 건너뛰기
+```
 
 ## 문제 해결
 
