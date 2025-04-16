@@ -155,89 +155,136 @@ create_backup() {
     return 0
 }
 
-# 백업 생성 (주요 작업 시작 전)
-echo -e "${BLUE}===== 개발 환경 자동화 스크립트 시작 =====${NC}"
-load_config  # 설정 로드 추가
-create_backup
+# 진행 표시 함수
+show_progress() {
+    local step=$1
+    local total=$2
+    local percent=$((step * 100 / total))
+    local width=40
+    local completed=$((width * step / total))
+    
+    printf "\r[${YELLOW}"
+    for ((i=0; i<completed; i++)); do printf "="; done
+    printf ">"
+    for ((i=completed; i<width; i++)); do printf " "; done
+    printf "${NC}] %3d%% (%d/%d)" $percent $step $total
+}
 
-# 시스템 업데이트
-log_info "시스템 업데이트 중..."
-sudo apt update && sudo apt upgrade -y
-check_status "시스템 업데이트"
+# 메인 함수 정의
+main() {
+    echo -e "${BLUE}===== 개발 환경 자동화 스크립트 시작 =====${NC}"
+    
+    # 백업 생성 및 설정 로드
+    load_config
+    create_backup
+    
+    # 총 단계 수 및 현재 단계 초기화
+    total_steps=8  # 주요 단계 수
+    current_step=0
+    
+    # 스크립트 시작
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    log_info "시스템 업데이트 중..."
+    sudo apt update && sudo apt upgrade -y
+    check_status "시스템 업데이트"
+    
+    # 기본 개발 도구 설치
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    log_info "기본 개발 도구 설치 중..."
+    sudo apt install -y build-essential git curl wget unzip software-properties-common apt-transport-https ca-certificates
+    check_status "기본 개발 도구 설치"
+    
+    # 개발 디렉토리 생성
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    log_info "개발 디렉토리 구조 생성 중..."
+    mkdir -p ~/projects/personal
+    mkdir -p ~/projects/work
+    mkdir -p ~/projects/learning
+    check_status "개발 디렉토리 구조 생성"
+    
+    # Git 설정
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    log_info "Git 전역 설정 중..."
+    git config --global user.name "$GIT_NAME"
+    git config --global user.email "$GIT_EMAIL"
+    git config --global init.defaultBranch main
+    git config --global core.editor "nano"
+    check_status "Git 설정"
+    
+    # Zsh & Oh-My-Zsh 설치
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    log_info "Zsh 및 Oh-My-Zsh 설치 중..."
+    sudo apt install -y zsh
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    chsh -s $(which zsh)
+    check_status "Zsh 및 Oh-My-Zsh 설치"
+    
+    # Zsh 테마 설정
+    if [ -f "$HOME/.zshrc" ]; then
+        log_info "Zsh 테마를 $ZSH_THEME로 설정 중..."
+        sed -i "s/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"$ZSH_THEME\"/" "$HOME/.zshrc"
+        check_status "Zsh 테마 설정"
+    fi
+    
+    # NVM 및 Node.js 설치
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    if [ "$INSTALL_NODEJS" = true ]; then
+        log_info "NVM 및 Node.js 설치 중..."
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        nvm install --lts
+        check_status "Node.js 설치"
+    else
+        log_info "Node.js 설치를 건너뜁니다."
+    fi
+    
+    # Docker 설치
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    if [ "$INSTALL_DOCKER" = true ]; then
+        log_info "Docker 설치 중..."
+        sudo apt install -y docker.io
+        sudo usermod -aG docker ${USER}
+        check_status "Docker 설치"
+    else
+        log_info "Docker 설치를 건너뜁니다."
+    fi
+    
+    # Python 개발 환경 설치
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    if [ "$INSTALL_PYTHON" = true ]; then
+        log_info "Python 개발 도구 설치 중..."
+        sudo apt install -y python3-pip python3-venv
+        check_status "Python 개발 도구 설치"
+    else
+        log_info "Python 개발 도구 설치를 건너뜁니다."
+    fi
+    
+    # VS Code 서버 설치
+    current_step=$((current_step + 1))
+    show_progress $current_step $total_steps
+    log_info "VS Code 서버 설치 중..."
+    curl -fsSL https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64 -o vscode_cli.tar.gz
+    tar -xf vscode_cli.tar.gz
+    sudo mv code /usr/local/bin/
+    rm vscode_cli.tar.gz
+    check_status "VS Code 서버 설치"
+    
+    # 줄바꿈 (진행 표시줄 다음에 출력하기 위함)
+    echo
+    
+    log_success "===== 개발 환경 설정 완료! ====="
+    log_info "변경사항을 적용하려면 터미널을 재시작하거나 'source ~/.zshrc' 명령어를 실행하세요."
+}
 
-# 기본 개발 도구 설치
-log_info "기본 개발 도구 설치 중..."
-sudo apt install -y build-essential git curl wget unzip software-properties-common apt-transport-https ca-certificates
-check_status "기본 개발 도구 설치"
-
-# 개발 디렉토리 생성
-log_info "개발 디렉토리 구조 생성 중..."
-mkdir -p ~/projects/personal
-mkdir -p ~/projects/work
-mkdir -p ~/projects/learning
-check_status "개발 디렉토리 구조 생성"
-
-# Git 설정 - 설정 파일의 값 사용
-log_info "Git 전역 설정 중..."
-git config --global user.name "$GIT_NAME"
-git config --global user.email "$GIT_EMAIL"
-git config --global init.defaultBranch main
-git config --global core.editor "nano"
-check_status "Git 설정"
-
-# Zsh & Oh-My-Zsh 설치
-log_info "Zsh 및 Oh-My-Zsh 설치 중..."
-sudo apt install -y zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-chsh -s $(which zsh)
-check_status "Zsh 및 Oh-My-Zsh 설치"
-
-# Zsh 테마 설정
-if [ -f "$HOME/.zshrc" ]; then
-    log_info "Zsh 테마를 $ZSH_THEME로 설정 중..."
-    sed -i "s/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"$ZSH_THEME\"/" "$HOME/.zshrc"
-    check_status "Zsh 테마 설정"
-fi
-
-# NVM 및 Node.js 설치 - 설정에 따라 조건부 실행
-if [ "$INSTALL_NODEJS" = true ]; then
-    log_info "NVM 및 Node.js 설치 중..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-    nvm install --lts
-    check_status "Node.js 설치"
-else
-    log_info "Node.js 설치를 건너뜁니다."
-fi
-
-# Docker 설치 - 설정에 따라 조건부 실행
-if [ "$INSTALL_DOCKER" = true ]; then
-    log_info "Docker 설치 중..."
-    sudo apt install -y docker.io
-    sudo usermod -aG docker ${USER}
-    check_status "Docker 설치"
-else
-    log_info "Docker 설치를 건너뜁니다."
-fi
-
-# Python 개발 환경 설치 - 설정에 따라 조건부 실행
-if [ "$INSTALL_PYTHON" = true ]; then
-    log_info "Python 개발 도구 설치 중..."
-    sudo apt install -y python3-pip python3-venv
-    check_status "Python 개발 도구 설치"
-else
-    log_info "Python 개발 도구 설치를 건너뜁니다."
-fi
-
-# VS Code 서버 설치 (WSL용)
-log_info "VS Code 서버 설치 중..."
-curl -fsSL https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64 -o vscode_cli.tar.gz
-tar -xf vscode_cli.tar.gz
-sudo mv code /usr/local/bin/
-rm vscode_cli.tar.gz
-check_status "VS Code 서버 설치"
-
-log_success "===== 개발 환경 설정 완료! ====="
-log_info "변경사항을 적용하려면 터미널을 재시작하거나 'source ~/.zshrc' 명령어를 실행하세요."
+# 메인 함수 실행
+main "$@"
