@@ -37,6 +37,40 @@ check_status() {
     fi
 }
 
+# 백업 생성 함수
+create_backup() {
+    log_info "설정 파일 백업 시작..."
+    
+    # 백업 디렉토리 생성
+    timestamp=$(date +"%Y%m%d_%H%M%S")
+    backup_dir="$HOME/.dotfiles_backup_$timestamp"
+    mkdir -p "$backup_dir"
+    
+    # 주요 설정 파일 백업
+    if [ -f "$HOME/.zshrc" ]; then
+        cp "$HOME/.zshrc" "$backup_dir/"
+        log_info ".zshrc 파일을 백업했습니다."
+    fi
+    
+    if [ -f "$HOME/.gitconfig" ]; then
+        cp "$HOME/.gitconfig" "$backup_dir/"
+        log_info ".gitconfig 파일을 백업했습니다."
+    fi
+    
+    if [ -d "$HOME/.vscode" ]; then
+        mkdir -p "$backup_dir/.vscode"
+        cp -r "$HOME/.vscode/settings.json" "$backup_dir/.vscode/" 2>/dev/null
+        log_info "VS Code 설정을 백업했습니다."
+    fi
+    
+    log_success "설정 파일 백업 완료 (백업 위치: $backup_dir)"
+    return 0
+}
+
+# 백업 생성 (주요 작업 시작 전)
+echo -e "${BLUE}===== 개발 환경 자동화 스크립트 시작 =====${NC}"
+create_backup
+
 # 시스템 업데이트
 log_info "시스템 업데이트 중..."
 sudo apt update && sudo apt upgrade -y
