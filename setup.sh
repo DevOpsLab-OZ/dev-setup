@@ -1,27 +1,66 @@
 #!/bin/bash
 
-echo "===== 개발 환경 자동화 스크립트 시작 ====="
+# 개발 환경 자동화 스크립트
+
+# 색상 코드 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 로그 출력 함수
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# 실행 상태 확인 함수
+check_status() {
+    if [ $? -eq 0 ]; then
+        log_success "$1 완료"
+        return 0
+    else
+        log_error "$1 실패"
+        return 1
+    fi
+}
 
 # 시스템 업데이트
-echo "시스템 업데이트 중..."
+log_info "시스템 업데이트 중..."
 sudo apt update && sudo apt upgrade -y
+check_status "시스템 업데이트"
 
 # 기본 개발 도구 설치
-echo "기본 개발 도구 설치 중..."
+log_info "기본 개발 도구 설치 중..."
 sudo apt install -y build-essential git curl wget unzip software-properties-common apt-transport-https ca-certificates
+check_status "기본 개발 도구 설치"
 
 # 개발 디렉토리 생성
-echo "개발 디렉토리 구조 생성 중..."
+log_info "개발 디렉토리 구조 생성 중..."
 mkdir -p ~/projects/personal
 mkdir -p ~/projects/work
 mkdir -p ~/projects/learning
+check_status "개발 디렉토리 구조 생성"
 
 # Git 설정
-echo "Git 전역 설정 중..."
+log_info "Git 전역 설정 중..."
 git config --global user.name "당신의 이름"
 git config --global user.email "당신의이메일@example.com"
 git config --global init.defaultBranch main
 git config --global core.editor "nano"
+check_status "Git 설정"
 
 # Zsh & Oh-My-Zsh 설치
 echo "Zsh 및 Oh-My-Zsh 설치 중..."
