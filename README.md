@@ -1,50 +1,78 @@
-# 개인 개발 환경 자동화 프로젝트
+# Dev-Setup: 개발 환경 자동화 프로젝트
 
-개발 환경 설정을 자동화한 프로젝트입니다.
+이 프로젝트는 개발 환경 설정을 자동화하여 새로운 시스템에서 빠르고 일관되게 개발 환경을 구축할 수 있도록 도와줍니다.
 
-## 환경 구성 요소
+## 주요 기능
 
-- **운영체제**: Ubuntu 22.04 LTS on WSL2
-- **셸**: Zsh + Oh-My-Zsh
-- **버전 관리**: Git
-- **개발 도구**: VS Code, Node.js, Python, Docker
-- **자동화**: 셸 스크립트
+- WSL2 기반 Ubuntu 환경 자동 구성
+- 필수 개발 도구 및 라이브러리 설치
+- Git, Zsh, Oh-My-Zsh 자동 설정
+- 프로그래밍 언어 환경 (Node.js, Python) 설정
+- Docker 개발 환경 구성
+- VS Code 설정 및 확장 프로그램 자동 설치
+
+## 시스템 요구사항
+
+- Ubuntu 22.04 LTS (WSL2 또는 네이티브)
+- 관리자 권한 (sudo)
+- 인터넷 연결
 
 ## 설치 방법
 
-1. WSL2 설치 및 Ubuntu 22.04 설정
-   ```bash
-   # Windows PowerShell에서 실행 (관리자 권한)
-   wsl --install -d Ubuntu-22.04
-   ```
+### 1. WSL2 및 Ubuntu 설정 (Windows 사용자)
 
-2. 개발 환경 자동화 스크립트 실행
-   ```bash
-   # 저장소 클론
-   git clone https://github.com/DevOpsLab-OZ/dev-setup.git
-   cd dev-setup
-   
-   # 스크립트 실행 권한 부여
-   chmod +x setup.sh
-   
-   # 스크립트 실행
-   ./setup.sh
-   ```
+Windows PowerShell에서 관리자 권한으로 실행:
 
-3. Dotfiles 설치
-   ```bash
-   git clone https://github.com/DevOpsLab/dotfiles.git
-   cd dotfiles
-   ./install.sh
-   ```
+```bash
+wsl --install -d Ubuntu-22.04
+```
 
-4. VS Code 확장 프로그램 설치
-   ```bash
-   cd dev-setup/vscode
-   ./vscode-extensions.sh
-   ```
+### 2. 저장소 클론
 
-## 작업 흐름
+```bash
+git clone https://github.com/DevOpsLab-OZ/dev-setup.git
+cd dev-setup
+```
+
+### 3. 설정 파일 수정 (선택사항)
+
+설치 옵션과 개인 설정을 조정하려면 `config.yaml` 파일을 수정하세요:
+
+```bash
+nano config.yaml
+```
+
+### 4. 자동화 스크립트 실행
+
+```bash
+# 스크립트 실행 권한 부여
+chmod +x setup.sh
+
+# 스크립트 실행
+./setup.sh
+```
+
+### 5. VS Code 확장 프로그램 설치
+
+```bash
+cd vscode
+chmod +x vscode-extensions.sh
+./vscode-extensions.sh
+```
+
+대화형 모드로 확장 프로그램을 선택적으로 설치하려면:
+
+```bash
+./vscode-extensions.sh --interactive
+```
+
+## 주요 구성 요소
+
+- **setup.sh**: 주요 개발 환경 자동화 스크립트
+- **config.yaml**: 환경 설정 값 (Git 사용자 정보, 설치 옵션 등)
+- **vscode/vscode-extensions.sh**: VS Code 확장 프로그램 설치 스크립트
+
+## 개발 워크플로우
 
 1. 새 프로젝트 시작:
    ```bash
@@ -71,9 +99,19 @@
    source venv/bin/activate
    ```
 
+## 문제 해결
+
+- **스크립트 실행 권한 오류**: `chmod +x 스크립트명.sh`으로 실행 권한을 부여하세요.
+- **APT 패키지 설치 실패**: `sudo apt update`를 실행하여 패키지 목록을 갱신하세요.
+- **권한 문제**: 필요에 따라 `sudo` 명령어를 사용하여 스크립트를 실행하세요.
+
 ## 참고 자료
 
 - [Ubuntu 공식 문서](https://help.ubuntu.com/)
 - [WSL2 설명서](https://docs.microsoft.com/windows/wsl/)
 - [Git 문서](https://git-scm.com/doc)
 - [VS Code 사용자 가이드](https://code.visualstudio.com/docs)
+
+## 라이선스
+
+MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
